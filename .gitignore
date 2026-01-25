@@ -1,0 +1,17 @@
+# Node
+node_modules/
+dist/
+build/
+
+# Env
+.env
+
+# Media pesada
+*.mp4
+*.mov
+*.avi
+frontend/public/video/
+frontend/dist/
+
+# Logs
+npm-debug.log*

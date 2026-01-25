@@ -1,0 +1,9 @@
+﻿node_modules
+.git
+.env
+dist
+*.mp4
+*.mov
+*.zip
+*.log
+

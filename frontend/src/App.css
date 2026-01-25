@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Dancing+Script:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Smooch+Sans:wght@100..900&display=swap');
+
+/* =======================
+   FONDO GLOBAL FIJO
+======================= */
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  width: 100%;
+  font-family: 'Smooch Sans', sans-serif;
+
+  background-color: aliceblue; /* color fijo */
+}
+
+#root, .app {
+  min-height: 100vh; /* cubre todo el contenido */
+  width: 100%;
+  background-color: inherit; /* hereda el color de body */
+}
+
+/* =======================
+   CONTENIDO PRINCIPAL
+======================= */
+.main-content {
+  flex: 1;
+  padding: 5rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+
+  /* Efecto vidrio sobre el color fijo */
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 30px;
+  margin-top: 10rem;
+  margin-bottom: 3rem;
+
+  /* Borde con gradiente */
+  border: 3px solid;
+  border-image: linear-gradient(45deg, #ff6b35, #1e90ff, #ff6b35) 1;
+
+  box-shadow: 
+    0 25px 80px rgba(255, 107, 53, 0.25),
+    0 15px 40px rgba(30, 144, 255, 0.2),
+    inset 0 0 50px rgba(255, 255, 255, 0.05);
+}
+
+/* =======================
+   TÍTULO DE GALERÍA
+======================= */
+.galeria-titulo {
+  text-align: center;
+  font-size: 4rem;
+  margin-bottom: 4rem;
+  color: #fff;
+  font-weight: 700;
+  text-shadow: 
+    0 0 20px #ff6b35,
+    0 0 40px #ff6b35,
+    3px 3px 0px #1e90ff,
+    6px 6px 0px rgba(30, 144, 255, 0.3);
+  position: relative;
+  animation: titleGlow 3s ease-in-out infinite alternate;
+  font-family: 'Pacifico', cursive;
+  font-style: italic;
+}
+
+/* =======================
+   GRID DE GALERÍA
+======================= */
+.galeria-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 2.5rem;
+  padding: 2rem 0;
+}
+
+/* =======================
+   MEDIA QUERIES
+======================= */
+@media (max-width: 768px) {
+  .galeria-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  
+  .main-content {
+    padding: 3rem 1rem;
+    margin-top: 8rem;
+    margin-bottom: 1rem;
+    border-radius: 20px;
+  }
+  
+  .galeria-titulo {
+    font-size: 2.8rem;
+  }
+}

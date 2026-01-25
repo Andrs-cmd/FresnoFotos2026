@@ -1,0 +1,256 @@
+.cliente-dashboard {
+  padding: 2rem 0;
+}
+
+.search-section {
+  margin-bottom: 3rem;
+}
+
+.search-bar {
+  display: flex;
+  gap: 1rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.search-input {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 25px;
+  color: #ffffff;
+  font-size: 1rem;
+}
+
+.search-input::placeholder {
+  color: #cccccc;
+}
+
+.search-btn {
+  background: linear-gradient(135deg, #666666, #888888);
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 25px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.search-btn:hover {
+  background: linear-gradient(135deg, #777777, #999999);
+  transform: translateY(-2px);
+}
+
+.categorias-section {
+  margin-bottom: 3rem;
+}
+
+.categorias-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1.5rem;
+}
+
+.categoria-card {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2rem 1rem;
+  border-radius: 15px;
+  text-align: center;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+}
+
+.categoria-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-5px);
+}
+
+.categoria-icon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.categoria-nombre {
+  color: #ffffff;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.categoria-count {
+  color: #cccccc;
+  font-size: 0.9rem;
+}
+
+.fotografos-section {
+  margin-bottom: 3rem;
+}
+
+.fotografos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.fotografo-card {
+  background: rgba(151, 115, 77, 0.05);
+  padding: 2rem;
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.fotografo-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-5px);
+}
+
+.fotografo-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.fotografo-foto {
+  font-size: 3rem;
+}
+
+.fotografo-info {
+  flex: 1;
+}
+
+.fotografo-nombre {
+  color: #ffffff;
+  font-size: 1.3rem;
+  margin-bottom: 0.3rem;
+}
+
+.fotografo-especialidad {
+  color: #cccccc;
+  font-size: 0.9rem;
+}
+
+.fotografo-stats {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding: 1rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-value {
+  display: block;
+  color: #ffffff;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 0.3rem;
+}
+
+.stat-label {
+  color: #cccccc;
+  font-size: 0.8rem;
+}
+
+.fotografo-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn-ver-portfolio, .btn-contactar {
+  flex: 1;
+  padding: 0.8rem 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.btn-ver-portfolio {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.btn-contactar {
+  background: linear-gradient(135deg, #666666, #888888);
+  color: #ffffff;
+}
+
+.btn-ver-portfolio:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-contactar:hover {
+  background: linear-gradient(135deg, #777777, #999999);
+}
+
+.proyectos-section {
+  margin-top: 3rem;
+}
+
+.proyectos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.proyecto-item {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.proyecto-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-3px);
+}
+
+.proyecto-image {
+  height: 120px;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+}
+
+.proyecto-info {
+  padding: 1rem;
+}
+
+.proyecto-info h4 {
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.proyecto-info p {
+  color: #cccccc;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .search-bar {
+    flex-direction: column;
+  }
+  
+  .categorias-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .fotografos-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .fotografo-actions {
+    flex-direction: column;
+  }
+}

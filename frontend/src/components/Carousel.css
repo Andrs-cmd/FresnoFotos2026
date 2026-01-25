@@ -1,0 +1,222 @@
+.carousel {
+  position: relative;
+  width: 100%;
+  height: 70vh;
+  min-height: 500px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0a0a2a, #1a1a4a);
+}
+
+.carousel-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.carousel-item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.8s ease-in-out;
+}
+
+.carousel-item.active {
+  opacity: 1;
+}
+
+.carousel-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.6) contrast(1.1);
+}
+
+.carousel-caption {
+  position: absolute;
+  bottom: 20%;
+  left: 10%;
+  text-align: left;
+  color: white;
+  z-index: 2;
+}
+
+.carousel-title {
+  font-family: 'Arial Black', 'Helvetica Bold', sans-serif;
+  font-size: 4rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-bottom: 1rem;
+  text-shadow: 
+    3px 3px 0px #ff6b35,
+    0 0 30px rgba(255, 107, 53, 0.7);
+  line-height: 1.1;
+}
+
+.carousel-subtitle {
+  font-family: 'Arial', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-shadow: 
+    2px 2px 0px #1e90ff,
+    0 0 20px rgba(30, 144, 255, 0.7);
+}
+
+/* Indicadores - colores naranja/azul */
+.carousel-indicators {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 1rem;
+  z-index: 3;
+}
+
+.carousel-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.carousel-indicator.active {
+  background: linear-gradient(135deg, #ff6b35, #1e90ff);
+  transform: scale(1.2);
+  box-shadow: 0 0 15px #ff6b35;
+}
+
+.carousel-indicator:hover {
+  background: rgba(255, 107, 53, 0.5);
+}
+
+/* Controles - colores naranja/azul */
+.carousel-control {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 107, 53, 0.2);
+  border: 2px solid #fff;
+  color: white;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 3;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.carousel-control:hover {
+  background: linear-gradient(135deg, #ff6b35, #1e90ff);
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 0 25px #ff6b35;
+}
+
+.carousel-control.prev {
+  left: 2rem;
+}
+
+.carousel-control.next {
+  right: 2rem;
+}
+
+.carousel-control span {
+  line-height: 1;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .carousel {
+    height: 50vh;
+    min-height: 400px;
+  }
+  
+  .carousel-title {
+    font-size: 2.5rem;
+    letter-spacing: 2px;
+  }
+  
+  .carousel-subtitle {
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+  }
+  
+  .carousel-control {
+    width: 45px;
+    height: 45px;
+    font-size: 1.5rem;
+  }
+  
+  .carousel-control.prev {
+    left: 1rem;
+  }
+  
+  .carousel-control.next {
+    right: 1rem;
+  }
+  
+  .carousel-caption {
+    left: 5%;
+    bottom: 15%;
+  }
+}
+.video-hero {
+  width: 100%;
+  height: 40vh;           /* ⬅️ ajustá acá la altura */
+  max-height: 450px;      /* opcional: límite */
+  background: black;      /* relleno si el video no ocupa todo */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.video-hero__video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;    /* ⬅️ NO recorta */
+}
+
+
+.carousel-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.carousel-caption {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  text-align: center;
+  
+}
+
+.carousel-title {
+  font-size: clamp(2rem, 5vw, 4rem);
+  letter-spacing: 0.1em;
+}
+
+.carousel-subtitle {
+  margin-top: 1rem;
+  font-size: clamp(1rem, 2vw, 1.5rem);
+  opacity: 0.85;
+}
