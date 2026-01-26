@@ -1,7 +1,8 @@
 # Node
 node_modules/
-dist/
-build/
+
+# NO ignorar dist (frontend build)
+!frontend/dist/
 
 # Env
 .env
@@ -11,7 +12,6 @@ build/
 *.mov
 *.avi
 frontend/public/video/
-frontend/dist/
 
 # Logs
 npm-debug.log*
