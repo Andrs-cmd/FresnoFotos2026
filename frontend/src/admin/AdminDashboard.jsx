@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../api/axios";
 
-const API_BASE = import.meta.env.VITE_API_URL.replace("/api", "");
+// CORRECCIÓN: Añadimos un valor por defecto para evitar el error .replace() de undefined
+const API_URL = import.meta.env.VITE_API_URL || "";
+const API_BASE = API_URL.replace("/api", "");
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
@@ -10,7 +12,7 @@ const AdminDashboard = () => {
   const [photographerFilter, setPhotographerFilter] = useState("all");
 
   /* ===============================
-     OBTENER ESTADÍSTICAS
+      OBTENER ESTADÍSTICAS
   =============================== */
   useEffect(() => {
     const fetchStats = async () => {
@@ -26,7 +28,7 @@ const AdminDashboard = () => {
   }, []);
 
   /* ===============================
-     OBTENER FOTOS
+      OBTENER FOTOS
   =============================== */
   useEffect(() => {
     const fetchPhotos = async () => {
@@ -42,34 +44,39 @@ const AdminDashboard = () => {
   }, []);
 
   /* ===============================
-     CARGAR PREVIEWS PROTEGIDOS
+      CARGAR PREVIEWS PROTEGIDOS
   =============================== */
   useEffect(() => {
-    photos.forEach(async (photo) => {
-      if (photoUrls[photo._id]) return;
+    const loadPreviews = async () => {
+      for (const photo of photos) {
+        if (photoUrls[photo._id]) continue;
 
-      try {
-        const res = await api.get(
-          `/admin/photos/${photo._id}/original`,
-          { responseType: "blob" }
-        );
+        try {
+          const res = await api.get(
+            `/admin/photos/${photo._id}/original`,
+            { responseType: "blob" }
+          );
 
-        const url = URL.createObjectURL(res.data);
-        setPhotoUrls((prev) => ({ ...prev, [photo._id]: url }));
-      } catch (err) {
-        console.error("❌ Error cargando preview:", err);
+          const url = URL.createObjectURL(res.data);
+          setPhotoUrls((prev) => ({ ...prev, [photo._id]: url }));
+        } catch (err) {
+          console.error("❌ Error cargando preview:", err);
+        }
       }
-    });
+    };
+
+    if (photos.length > 0) {
+      loadPreviews();
+    }
 
     return () => {
-      Object.values(photoUrls).forEach((url) =>
-        URL.revokeObjectURL(url)
-      );
+      // Limpieza de URLs de memoria al desmontar
+      Object.values(photoUrls).forEach((url) => URL.revokeObjectURL(url));
     };
   }, [photos]);
 
   /* ===============================
-     DESCARGAR ORIGINAL
+      DESCARGAR ORIGINAL
   =============================== */
   const handleDownloadPhoto = async (photo) => {
     try {
@@ -93,7 +100,7 @@ const AdminDashboard = () => {
   };
 
   /* ===============================
-     ELIMINAR FOTO
+      ELIMINAR FOTO
   =============================== */
   const handleDeletePhoto = async (id) => {
     if (!confirm("¿Eliminar foto?")) return;
@@ -107,7 +114,7 @@ const AdminDashboard = () => {
   };
 
   /* ===============================
-     AGRUPAR POR FOTÓGRAFO
+      AGRUPAR POR FOTÓGRAFO
   =============================== */
   const photosByPhotographer = useMemo(() => {
     const map = {};
@@ -132,7 +139,11 @@ const AdminDashboard = () => {
       g.photographer._id === photographerFilter
   );
 
-  if (!stats) return <p>Cargando...</p>;
+  if (!stats) return (
+    <div style={{ padding: 30, textAlign: "center" }}>
+      <p>Cargando estadísticas del servidor...</p>
+    </div>
+  );
 
   return (
     <div
@@ -159,7 +170,7 @@ const AdminDashboard = () => {
         onChange={(e) => setPhotographerFilter(e.target.value)}
         style={{ padding: 8, marginBottom: 20 }}
       >
-        <option value="all">Todos</option>
+        <option value="all">Todos los fotógrafos</option>
         {photosByPhotographer.map((g) => (
           <option
             key={g.photographer._id}
@@ -169,6 +180,8 @@ const AdminDashboard = () => {
           </option>
         ))}
       </select>
+
+      {filtered.length === 0 && <p>No se encontraron fotos.</p>}
 
       {filtered.map((group) => (
         <div
@@ -198,8 +211,11 @@ const AdminDashboard = () => {
                 {photoUrls[photo._id] ? (
                   <img
                     src={photoUrls[photo._id]}
+                    alt={photo.title}
                     style={{
                       width: "100%",
+                      height: "150px",
+                      objectFit: "cover",
                       borderRadius: 6,
                       marginBottom: 8
                     }}
@@ -209,25 +225,33 @@ const AdminDashboard = () => {
                     style={{
                       height: 150,
                       background: "#ddd",
-                      borderRadius: 6
+                      borderRadius: 6,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "12px",
+                      color: "#666",
+                      marginBottom: 8
                     }}
-                  />
+                  >
+                    Cargando...
+                  </div>
                 )}
 
-                <p style={{ fontWeight: "bold" }}>
+                <p style={{ fontWeight: "bold", fontSize: "14px", marginBottom: "10px" }}>
                   {photo.title}
                 </p>
 
                 <div style={{ display: "flex", gap: 8 }}>
                   <button
                     onClick={() => handleDownloadPhoto(photo)}
+                    style={{ flex: 1, fontSize: "12px", cursor: "pointer" }}
                   >
                     Descargar
                   </button>
                   <button
-                    onClick={() =>
-                      handleDeletePhoto(photo._id)
-                    }
+                    onClick={() => handleDeletePhoto(photo._id)}
+                    style={{ flex: 1, fontSize: "12px", background: "#ff4d4d", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}
                   >
                     Eliminar
                   </button>
@@ -252,8 +276,8 @@ const StatCard = ({ title, value }) => (
       textAlign: "center"
     }}
   >
-    <h4>{title}</h4>
-    <strong style={{ fontSize: 20 }}>{value}</strong>
+    <h4 style={{ margin: "0 0 10px 0" }}>{title}</h4>
+    <strong style={{ fontSize: 24 }}>{value}</strong>
   </div>
 );
 
