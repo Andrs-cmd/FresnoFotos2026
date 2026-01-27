@@ -1,37 +1,39 @@
 import axios from "axios";
 
-// 🛠️ DETECCIÓN DE ENTORNO:
-// Si estamos en localhost, usamos '/api' para que el proxy de Vite lo mande al backend de Docker.
-// Si no, usamos la variable de entorno de producción.
-const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-const BASE_URL = isLocal ? "/api" : import.meta.env.VITE_API_URL;
-
+/**
+ * 🛠️ CONFIGURACIÓN DE AXIOS
+ * Usamos "/api" como ruta base.
+ * - En Desarrollo (Vite): El proxy de vite.config.js redirige /api a http://api_backend:5000
+ * - En Producción (Nginx): Nginx redirige fresnofotos.com/api a tu contenedor backend.
+ */
 const api = axios.create({
-  baseURL: BASE_URL,
-  withCredentials: true, // 🔑 Importante para enviar cookies/sesiones
+  baseURL: "/api", 
+  withCredentials: true, // 🔑 Necesario para cookies de sesión si las usas
 });
 
-// 👉 Interceptor para enviar el token automáticamente en los headers
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// 👉 Interceptor: Adjuntar Token JWT en cada petición
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
+);
 
-  return config;
-}, (error) => {
-  return Promise.reject(error);
-});
-
-// 👉 Interceptor para manejar respuestas globales
+// 👉 Interceptor: Manejo de errores globales
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Manejo de errores globales (ej: logout si el token expira - 401)
+    // Si el servidor responde 401 (No autorizado/Token expirado)
     if (error.response && error.response.status === 401) {
-      // Solo redirigir si no estamos ya en la página de login para evitar bucles
+      // Evitamos bucle infinito si ya estamos en la página de login
       if (!window.location.pathname.includes("/login")) {
+        console.warn("Sesión expirada o inválida. Redirigiendo a login...");
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         window.location.href = "/login";
