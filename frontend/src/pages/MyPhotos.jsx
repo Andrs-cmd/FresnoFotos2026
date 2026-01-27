@@ -1,7 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import api from "../api/axios";
 
-const API_URL = import.meta.env.VITE_API_URL;
+// ✅ CAMBIO CLAVE: 
+// Si estamos en desarrollo, dejamos API_URL vacío para que use la ruta relativa
+// y el proxy de Vite pueda interceptar la petición.
+const API_URL = import.meta.env.MODE === 'development' ? "" : import.meta.env.VITE_API_URL;
 
 export default function MyPhotos({ refreshKey }) {
   const [photos, setPhotos] = useState([]);
@@ -62,6 +65,7 @@ export default function MyPhotos({ refreshKey }) {
         {filteredPhotos.map((photo) => (
           <img
             key={photo._id}
+            /* ✅ Ahora cargará como /uploads/slug/thumb/... */
             src={`${API_URL}${photo.thumbUrl}`}
             alt="Foto subida"
             style={{

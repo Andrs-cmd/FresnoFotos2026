@@ -8,134 +8,109 @@ const fs = require("fs");
 
 const authRoutes = require("./routes/auth.routes");
 const photoRoutes = require("./routes/photoRoutes");
-const { protect } = require("./middleware/auth.middleware");
-const isAdmin = require("./middleware/isAdmin");
+const adminRoutes = require("./routes/admin.routes");
+const salesRoutes = require("./routes/sale.routes");
+const adminPhotosRoutes = require("./routes/admin.photos.routes");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000; 
+
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+
+console.log("🚀 Iniciando FresnoFotos API");
 
 /* =====================
-   VALIDACIÓN ENV
-===================== */
-if (!process.env.MONGO_URI) {
-  console.error("❌ MONGO_URI no definido");
-  process.exit(1);
-}
-
-/* =====================
-   CORS (PRODUCCIÓN)
-   ✔️ Frontend real
-   ✔️ Uploads
-   ✔️ Auth
+    CORS ACTUALIZADO
 ===================== */
 const allowedOrigins = [
   "https://fresnofotos.com",
-  "https://www.fresnofotos.com"
+  "https://www.fresnofotos.com",
+  "https://api.fresnofotos.com",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "http://localhost:5173"
 ];
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // Permitir requests sin origin (Postman, curl, server-to-server)
-    if (!origin) return callback(null, true);
-
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || !IS_PRODUCTION) return callback(null, true);
     if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
     }
-
-    return callback(new Error("Not allowed by CORS"));
   },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Requested-With"
-  ]
-}));
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization", "Origin", "Accept", "X-Requested-With"],
+};
 
-// ✅ PRE-FLIGHT (clave para uploads)
-app.options("*", cors());
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 /* =====================
-   MIDDLEWARES
+    MIDDLEWARES
 ===================== */
-app.use(express.json({ limit: "100mb" }));
-app.use(express.urlencoded({ extended: true, limit: "100mb" }));
-
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
-  next();
-});
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 /* =====================
-   STATIC FILES
+    📂 SERVIR ARCHIVOS ESTÁTICOS (ESTO FALTABA)
 ===================== */
-app.use("/images", express.static(path.join(__dirname, "public/images")));
+// Hacemos pública la carpeta de subidas para que se puedan ver las fotos
+const uploadsPath = path.join(process.cwd(), "uploads");
+app.use("/uploads", express.static(uploadsPath));
+console.log("📁 Fotos servidas desde:", uploadsPath);
 
 /* =====================
-   ROUTES
+    ROUTES
 ===================== */
 app.use("/api/auth", authRoutes);
 app.use("/api/photos", photoRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/sales", salesRoutes);
+app.use("/api/admin/photos", adminPhotosRoutes);
 
-/* =====================
-   HEALTH CHECK
-===================== */
-app.get("/health", (req, res) => {
-  res.json({
-    status: "ok",
-    environment: process.env.NODE_ENV || "production",
-    timestamp: new Date().toISOString(),
+app.get("/api/health", (req, res) => {
+  res.status(mongoose.connection.readyState === 1 ? 200 : 503).json({
+    status: mongoose.connection.readyState === 1 ? "healthy" : "unhealthy",
+    dbState: mongoose.connection.readyState,
   });
 });
 
+app.get("/", (_, res) => {
+  res.json({ app: "FresnoFotos API", status: "OK", localMode: !IS_PRODUCTION });
+});
+
 /* =====================
-   ADMIN DOWNLOAD
+    DATABASE CONNECTION
 ===================== */
-app.get(
-  "/api/admin/photos/image/original/:filename",
-  protect,
-  isAdmin,
-  (req, res) => {
-    const filePath = path.join(
-      __dirname,
-      "uploads",
-      "original",
-      req.params.filename
-    );
-
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: "Archivo no encontrado" });
-    }
-
-    res.download(filePath);
+const connectDB = async () => {
+  const mongoUri = process.env.MONGO_URI || "mongodb://db:27017/fresnofotos";
+  try {
+    await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 });
+    console.log("🟢 MongoDB conectado exitosamente");
+  } catch (err) {
+    console.error("🔴 Error MongoDB:", err.message);
+    setTimeout(connectDB, 5000);
   }
-);
+};
 
 /* =====================
-   404
+    SERVER START
 ===================== */
-app.use((req, res) => {
-  res.status(404).json({ error: "Ruta no encontrada" });
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 API escuchando en puerto ${PORT}`);
+  connectDB();
 });
 
 /* =====================
-   MONGODB + SERVER
+    ERROR HANDLERS
 ===================== */
-const safeUri = process.env.MONGO_URI.replace(/\/\/.*@/, "//<user>:<pass>@");
-console.log("🔗 Conectando a MongoDB:", safeUri);
-
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("🟢 MongoDB conectado");
-
-    // ⚠️ localhost → SOLO accesible por Nginx
-    app.listen(PORT, "127.0.0.1", () => {
-      console.log(`🚀 Backend corriendo en puerto ${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error("❌ Error MongoDB:", err.message);
-    process.exit(1);
-  });
+app.use((err, req, res, next) => {
+  if (err.message === "Not allowed by CORS") {
+    return res.status(403).json({ error: "CORS bloqueado localmente" });
+  }
+  console.error("❌ Error detectado:", err.stack);
+  res.status(500).json({ error: "Error interno del servidor" });
+});

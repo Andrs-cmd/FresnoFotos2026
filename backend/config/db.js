@@ -10,16 +10,15 @@ const connectDB = async () => {
       process.exit(1);
     }
 
-    // Log seguro (oculta usuario/contraseña)
+    // Log seguro (oculta credenciales)
     const safeUri = mongoUri.replace(/\/\/.*@/, "//<usuario>:<password>@");
     console.log("🔗 Intentando conectar a MongoDB con URI:", safeUri);
 
-    const conn = await mongoose.connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    const conn = await mongoose.connect(mongoUri);
 
-    console.log(`🟢 MongoDB conectado en host: ${conn.connection.host}, base de datos: ${conn.connection.name}`);
+    console.log(
+      `🟢 MongoDB conectado → host: ${conn.connection.host}, db: ${conn.connection.name}`
+    );
   } catch (error) {
     console.error("🔴 Error MongoDB:", error.message);
     process.exit(1);

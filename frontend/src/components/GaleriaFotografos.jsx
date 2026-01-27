@@ -31,7 +31,7 @@ const GaleriaFotografos = () => {
       nombre: "AILU",
       slug: "ailu",
       especialidad: "FRESNO ESTUDIO",
-      imagen: "/assets/img/ailu.jpeg"
+      imagen: "/assets/img/ailu.jpg"
     },
     {
       id: 5,
@@ -66,7 +66,7 @@ const GaleriaFotografos = () => {
       nombre: "ROWSI",
       slug: "rowsi",
       especialidad: "FRESNO ESTUDIO",
-      imagen: "/assets/img/rocio.jpeg"
+      imagen: "/assets/img/rocio.jpg"
     },
     {
       id: 10,

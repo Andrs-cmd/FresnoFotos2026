@@ -1,16 +1,8 @@
 const multer = require("multer");
-const multerS3 = require("multer-s3");
-const AWS = require("aws-sdk");
 const path = require("path");
+const fs = require("fs");
 
-// 🔧 Configuración de S3 usando variables del .env
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION || "us-east-1",
-});
-
-// 🔧 Filtro de archivos
+// 🔧 Filtro de archivos (Mantenemos tu lógica original)
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|webp/;
   const extName = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -23,30 +15,34 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// 🔧 Storage de multer con S3
-const storage = multerS3({
-  s3,
-  bucket: process.env.AWS_BUCKET_NAME,
-  acl: "public-read",
-  contentType: multerS3.AUTO_CONTENT_TYPE,
-  key: (req, file, cb) => {
+// 🔧 Configuración de almacenamiento local (DiskStorage)
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
     try {
+      // Verificamos que el usuario esté autenticado para usar su slug
       if (!req.user || !req.user.slug) {
-        return cb(new Error("Usuario no autorizado"), false);
+        return cb(new Error("Usuario no autorizado para subir archivos"), false);
       }
 
-      // 🔥 Elegir subcarpeta según tipo si viene en req.body.type
-      // Si no viene, por defecto "original"
-      const type = req.body.type || "original"; // puede ser original, thumb, preview
-      const ext = path.extname(file.originalname);
+      const photographerSlug = req.user.slug;
+      const type = req.body.type || "original"; // original, thumb, preview
+      
+      // Definimos la ruta: uploads/slug/tipo
+      const uploadPath = path.join(__dirname, "../uploads", photographerSlug, type);
 
-      const filename =
-        `${req.user.slug}/${type}/${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+      // 🔥 Crear la carpeta recursivamente si no existe
+      fs.mkdirSync(uploadPath, { recursive: true });
 
-      cb(null, filename);
+      cb(null, uploadPath);
     } catch (error) {
-      cb(error, false);
+      cb(error, null);
     }
+  },
+  filename: (req, file, cb) => {
+    // Generamos el nombre igual que antes para no romper la lógica de tu DB
+    const ext = path.extname(file.originalname);
+    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+    cb(null, uniqueName);
   },
 });
 

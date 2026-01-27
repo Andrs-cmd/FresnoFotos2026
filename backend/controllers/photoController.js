@@ -3,74 +3,63 @@ const User = require("../models/User");
 const sharp = require("sharp");
 const path = require("path");
 const fs = require("fs");
-const AWS = require("aws-sdk");
-const s3 = require("../middleware/s3"); // configuración AWS S3
+
+/**
+ * Función auxiliar para asegurar que las carpetas existan
+ */
+const ensureDirectory = (dirPath) => {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+};
 
 /* =====================================================
-   🔓 GALERÍA PÚBLICA (SOLO THUMB)
+    🔓 GALERÍA PÚBLICA (Incluye imageUrl)
 ===================================================== */
 const getPhotosByPhotographer = async (req, res) => {
   try {
     const { slug } = req.params;
-
     const photographer = await User.findOne({ slug });
-    if (!photographer) {
-      return res.status(404).json({ message: "Fotógrafo no encontrado" });
-    }
+    if (!photographer) return res.status(404).json({ message: "Fotógrafo no encontrado" });
 
-    const photos = await Photo.find({
-      photographer: photographer._id,
-      isPublic: true
-    })
-      .select("_id thumbUrl sessionDate")
+    const photos = await Photo.find({ photographer: photographer._id, isPublic: true })
+      .select("_id thumbUrl imageUrl sessionDate") 
       .sort({ sessionDate: -1, createdAt: -1 });
 
     res.json(photos);
   } catch (error) {
-    console.error("❌ getPhotosByPhotographer:", error);
+    console.error("❌ Error en getPhotosByPhotographer:", error);
     res.status(500).json({ message: "Error al obtener fotos" });
   }
 };
 
 /* =====================================================
-   🔓 PREVIEW PÚBLICO (CON WATERMARK)
+    🔓 PREVIEW PÚBLICO
 ===================================================== */
 const getPhotoPreview = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const photo = await Photo.findById(id).select("imageUrl");
-    if (!photo) {
-      return res.status(404).json({ message: "Foto no encontrada" });
-    }
-
-    res.json({
-      imageUrl: photo.imageUrl
-    });
+    const photo = await Photo.findById(req.params.id).select("imageUrl");
+    if (!photo) return res.status(404).json({ message: "Foto no encontrada" });
+    res.json({ imageUrl: photo.imageUrl });
   } catch (error) {
-    console.error("❌ getPhotoPreview:", error);
     res.status(500).json({ message: "Error al obtener preview" });
   }
 };
 
 /* =====================================================
-   🔐 MIS FOTOS
+    🔐 MIS FOTOS
 ===================================================== */
 const getMyPhotos = async (req, res) => {
   try {
-    const photos = await Photo.find({
-      photographer: req.user.id
-    }).sort({ createdAt: -1 });
-
+    const photos = await Photo.find({ photographer: req.user.id }).sort({ createdAt: -1 });
     res.json(photos);
   } catch (error) {
-    console.error("❌ getMyPhotos:", error);
     res.status(500).json({ message: "Error al obtener mis fotos" });
   }
 };
 
 /* =====================================================
-   🔐 SUBIDA DIRECTA A S3
+    🔐 SUBIDA LOCAL CON PROCESAMIENTO (SHARP)
 ===================================================== */
 const createPhoto = async (req, res) => {
   try {
@@ -79,144 +68,122 @@ const createPhoto = async (req, res) => {
     }
 
     const { title, price, sessionDate } = req.body;
-    if (!sessionDate) {
-      return res.status(400).json({ message: "Fecha requerida" });
-    }
-
-    const fixedSessionDate = new Date(`${sessionDate}T12:00:00`);
-
+    const fixedSessionDate = sessionDate ? new Date(`${sessionDate}T12:00:00`) : new Date();
+    
     const watermarkPath = path.join(process.cwd(), "assets", "watermark.png");
-    if (!fs.existsSync(watermarkPath)) {
-      throw new Error("❌ Watermark no encontrada");
-    }
-
     const photosToInsert = [];
+    const slug = req.user.slug;
 
     for (const file of req.files) {
       const timestamp = Date.now();
+      const filenameBase = `${timestamp}-${Math.round(Math.random() * 1e4)}`;
 
-      /* ---------- ORIGINAL ---------- */
-      const originalKey = `${req.user.slug}/original/${timestamp}-${file.originalname}`;
+      const baseDir = path.join(process.cwd(), "uploads", slug);
+      const paths = {
+        original: path.join(baseDir, "original"),
+        thumb: path.join(baseDir, "thumb"),
+        preview: path.join(baseDir, "preview"),
+      };
 
-      await s3.putObject({
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: originalKey,
-        Body: file.buffer,
-        ACL: "public-read",
-        ContentType: file.mimetype
-      }).promise();
+      Object.values(paths).forEach(ensureDirectory);
 
-      /* ---------- THUMB ---------- */
-      const thumbBuffer = await sharp(file.buffer)
+      /* ---------- 1. MOVER ORIGINAL ---------- */
+      const originalExt = path.extname(file.originalname);
+      const originalFileName = `${filenameBase}${originalExt}`;
+      const originalFinalPath = path.join(paths.original, originalFileName);
+      fs.renameSync(file.path, originalFinalPath);
+
+      /* ---------- 2. GENERAR THUMB ---------- */
+      const thumbFileName = `${filenameBase}.webp`;
+      const thumbFinalPath = path.join(paths.thumb, thumbFileName);
+      
+      await sharp(originalFinalPath)
         .resize({ width: 500 })
-        .webp({ quality: 65 })
-        .toBuffer();
+        .webp({ quality: 80 })
+        .toFile(thumbFinalPath);
 
-      const thumbKey = `${req.user.slug}/thumb/${timestamp}.webp`;
+      /* ---------- 3. PREVIEW PROTEGIDO (PIXELADO + MOSAICO WATERMARK) ---------- */
+      const previewFileName = `${filenameBase}.jpg`;
+      const previewFinalPath = path.join(paths.preview, previewFileName);
 
-      await s3.putObject({
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: thumbKey,
-        Body: thumbBuffer,
-        ACL: "public-read",
-        ContentType: "image/webp"
-      }).promise();
+      // Mantenemos el tamaño pequeño para forzar el pixelado en el modal
+      const baseSharp = sharp(originalFinalPath).resize({ width: 800 });
+      
+      try {
+        if (fs.existsSync(watermarkPath)) {
+          // Redimensionamos la marca de agua a un tamaño pequeño para que al repetirse
+          // cree un patrón de rejilla tupido
+          const watermarkBuffer = await sharp(watermarkPath)
+            .resize({ width: 200 }) 
+            .toBuffer();
 
-      /* ---------- PREVIEW CON WATERMARK ---------- */
-      const baseBuffer = await sharp(file.buffer)
-        .resize({ width: 600, kernel: "nearest" })
-        .jpeg({ quality: 45 })
-        .toBuffer();
-
-      const watermarkBuffer = await sharp(watermarkPath)
-        .resize({ width: 300 })
-        .toBuffer();
-
-      const previewBuffer = await sharp(baseBuffer)
-        .composite([
-          {
-            input: watermarkBuffer,
-            tile: true,
-            blend: "over",
-            opacity: 0.4
-          }
-        ])
-        .jpeg({ quality: 45 })
-        .toBuffer();
-
-      const previewKey = `${req.user.slug}/preview/${timestamp}.jpg`;
-
-      await s3.putObject({
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: previewKey,
-        Body: previewBuffer,
-        ACL: "public-read",
-        ContentType: "image/jpeg"
-      }).promise();
+          await baseSharp
+            .composite([{ 
+                input: watermarkBuffer, 
+                tile: true,        // 🚩 ESTO HACE QUE SE REPITA POR TODA LA IMAGEN
+                blend: "over", 
+                opacity: 0.6       // 🚩 Opacidad visible pero que deja ver la foto abajo
+            }])
+            // Bajamos calidad para mantener el pixelado y ruido
+            .jpeg({ quality: 25, chromaSubsampling: '4:2:0' })
+            .toFile(previewFinalPath);
+        } else {
+          await baseSharp.jpeg({ quality: 20 }).toFile(previewFinalPath);
+        }
+      } catch (sharpError) {
+        console.error("❌ Error en Sharp Composite:", sharpError.message);
+        await sharp(originalFinalPath)
+          .resize({ width: 600 })
+          .jpeg({ quality: 20 })
+          .toFile(previewFinalPath);
+      }
 
       photosToInsert.push({
         photographer: req.user.id,
-        thumbUrl: `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${thumbKey}`,
-        imageUrl: `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${previewKey}`,
-        originalUrl: `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${originalKey}`,
+        thumbUrl: `/uploads/${slug}/thumb/${thumbFileName}`,
+        imageUrl: `/uploads/${slug}/preview/${previewFileName}`,
+        originalUrl: `/uploads/${slug}/original/${originalFileName}`,
         title: title || "",
-        price: price || 0,
+        price: Number(price) || 0,
         sessionDate: fixedSessionDate,
         isPublic: true
       });
     }
 
     const createdPhotos = await Photo.insertMany(photosToInsert);
+    res.status(201).json({ message: "Fotos procesadas con protección visual total", photos: createdPhotos });
 
-    res.status(201).json({
-      message: "Fotos subidas correctamente a S3",
-      photos: createdPhotos
-    });
   } catch (error) {
-    console.error("❌ createPhoto:", error);
-    res.status(500).json({ message: "Error al subir fotos" });
+    console.error("❌ createPhoto Error Crítico:", error);
+    res.status(500).json({ message: "Error al procesar las imágenes" });
   }
 };
 
 /* =====================================================
-   🗑️ ELIMINAR FOTO DE S3
+    🗑️ ELIMINAR FOTO (LOCAL)
 ===================================================== */
 const deletePhoto = async (req, res) => {
   try {
     const photo = await Photo.findById(req.params.id);
-    if (!photo) {
-      return res.status(404).json({ message: "Foto no encontrada" });
-    }
+    if (!photo) return res.status(404).json({ message: "Foto no encontrada" });
 
     if (photo.photographer.toString() !== req.user.id) {
       return res.status(403).json({ message: "No autorizado" });
     }
 
-    const extractKey = (url) =>
-      url.split(`${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/`)[1];
-
-    const keysToDelete = [
-      photo.thumbUrl,
-      photo.imageUrl,
-      photo.originalUrl
-    ]
-      .filter(Boolean)
-      .map(extractKey);
-
-    if (keysToDelete.length > 0) {
-      await s3.deleteObjects({
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Delete: {
-          Objects: keysToDelete.map((Key) => ({ Key }))
-        }
-      }).promise();
-    }
+    const fileUrls = [photo.thumbUrl, photo.imageUrl, photo.originalUrl];
+    fileUrls.forEach(url => {
+      if (url) {
+        const relativePath = url.startsWith('/') ? url.substring(1) : url;
+        const fullPath = path.join(process.cwd(), relativePath);
+        if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+      }
+    });
 
     await photo.deleteOne();
-
-    res.json({ message: "Foto eliminada correctamente de S3" });
+    res.json({ message: "Foto y archivos eliminados correctamente" });
   } catch (error) {
-    console.error("❌ deletePhoto:", error);
+    console.error("❌ Error al eliminar foto:", error);
     res.status(500).json({ message: "Error al eliminar foto" });
   }
 };

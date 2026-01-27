@@ -5,7 +5,8 @@ const config = {
     frontendUrl: "http://localhost:3000",
     corsOrigin: "http://localhost:3000",
     uploadPath: "./uploads",
-    mongoUri: "TU_URI_DE_MONGODB"
+    mongoUri: "mongodb+srv://apradaweb_db_user:xT4ia4Qi0h8NniIh@photoapp.eb7kuvz.mongodb.net/?appName=photoapp",
+    JWT_SECRET: "S0UE8OKRt2jJv3gd5WidbQkRecVdLzQI795CEM+TZLw="
   },
 
   production: {
