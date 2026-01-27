@@ -22,6 +22,10 @@ export default defineConfig({
         secure: false,
         rewrite: (path) => path 
       }
-    }
+    },
+    allowedHosts: [
+      'fresnofotos.com',
+      '.fresnofotos.com' // El punto al principio permite subdominios
+    ]
   }
 })
