@@ -5,4 +5,4 @@ RUN npm install
 COPY . .
 EXPOSE 3000
 # En local, corremos 'dev', no el build de nginx
-CMD ["npm", "run", "dev", "--", "--host"]
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--force"]
