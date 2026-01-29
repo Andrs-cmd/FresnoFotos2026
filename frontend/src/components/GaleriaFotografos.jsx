@@ -10,7 +10,7 @@ const GaleriaFotografos = () => {
       nombre: "JORGE",
       slug: "jorge",
       especialidad: "FRESNO ESTUDIO",
-      imagen: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop"
+      imagen: "/assets/img/silueta.jpg"
     },
     {
       id: 2,
@@ -80,7 +80,7 @@ const GaleriaFotografos = () => {
       nombre: "ANDRÉS",
       slug: "andres",
       especialidad: "FRESNO ESTUDIO",
-      imagen: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop"
+      imagen: "/assets/img/silueta.jpg"
     }
   ];
 
