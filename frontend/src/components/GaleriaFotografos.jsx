@@ -87,7 +87,7 @@ const GaleriaFotografos = () => {
       nombre: "CAMILA",
       slug: "camila",
       especialidad: "FRESNO ESTUDIO",
-      imagen: "/assets/img/silueta.jpg"
+      imagen: "/assets/img/camila.jpg"
     },
     {
       id: 13,
