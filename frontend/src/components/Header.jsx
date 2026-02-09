@@ -36,9 +36,9 @@ const Header = () => {
               Iniciar Sesión
             </Link>
 
-            <Link to="/register" className="btn-register cursive-font">
+            {/*<Link to="/register" className="btn-register cursive-font">
               Registrarse
-            </Link>
+            </Link>*/}
           </div>
 
         </div>
