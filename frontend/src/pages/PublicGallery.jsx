@@ -181,10 +181,31 @@ export default function PublicGallery() {
             zIndex: 10000
           }}
         >
+          {/* BOTÓN CERRAR */}
+          <button
+            onClick={(e) => { e.stopPropagation(); setActivePhoto(null); }}
+            style={{
+              position: "absolute",
+              top: 20,
+              right: 20,
+              background: "rgba(0,0,0,0.6)",
+              color: "#fff",
+              border: "none",
+              fontSize: 28,
+              width: 40,
+              height: 40,
+              borderRadius: "50%",
+              cursor: "pointer",
+              zIndex: 10002
+            }}
+          >
+            ×
+          </button>
+
           <button onClick={(e) => { e.stopPropagation(); navigatePhoto(-1); }} style={navButtonStyle({ left: 10 })}>‹</button>
           <button onClick={(e) => { e.stopPropagation(); navigatePhoto(1); }} style={navButtonStyle({ right: 10 })}>›</button>
 
-          <div style={{ position: "relative", pointerEvents: "none" }}>
+          <div style={{ position: "relative" }}>
             <img
               key={activePhoto._id}
               src={`${API_URL}${activePhoto.imageUrl}`}
@@ -203,6 +224,28 @@ export default function PublicGallery() {
                 boxShadow: "0 0 40px rgba(0,0,0,0.5)"
               }}
             />
+
+            {/* BOTÓN SELECCIONAR DENTRO DEL MODAL */}
+            <div
+              onClick={(e) => { e.stopPropagation(); toggleSelect(activePhoto._id); }}
+              style={{
+                position: "absolute",
+                bottom: 20,
+                right: 20,
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                background: selectedPhotos.includes(activePhoto._id) ? "#00ff88" : "rgba(255,255,255,0.3)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                cursor: "pointer",
+                fontSize: 18,
+                fontWeight: "bold"
+              }}
+            >
+              {selectedPhotos.includes(activePhoto._id) ? "✓" : "+"}
+            </div>
           </div>
         </div>
       )}
