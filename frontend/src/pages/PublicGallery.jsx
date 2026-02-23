@@ -5,11 +5,7 @@ import api from "../api/axios";
 const API_URL = import.meta.env.MODE === 'development' ? "" : import.meta.env.VITE_API_URL;
 
 const calculatePrice = (qty) => {
-  if (qty >= 20) return { total: 132000 + (qty - 20) * 6600, label: "Promo paga 12 lleva 20", unitPrice: 6600 };
-  if (qty >= 16) return { total: 176000, label: "Promo paga 16 lleva todas", unitPrice: Math.round(176000 / qty) };
-  if (qty >= 14) return { total: 99000 + (qty - 14) * 7071, label: "Promo paga 9 lleva 14", unitPrice: 7071 };
-  if (qty >= 7) return { total: 55000 + (qty - 7) * 7857, label: "Promo paga 5 lleva 7", unitPrice: 7857 };
-  return { total: qty * 11000, label: "Precio regular", unitPrice: 11000 };
+ return { total: qty * 10000, label: "Precio regular", unitPrice: 10000 };
 };
 
 export default function PublicGallery() {
