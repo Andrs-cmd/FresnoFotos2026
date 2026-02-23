@@ -147,15 +147,20 @@ const createPhoto = async (req, res) => {
           const imageHeight = baseMeta.height;
 
           // 🔥 ESCALADO CORRECTO (lado más corto)
-          const baseSize = Math.min(imageWidth, imageHeight);
-          const watermarkWidth = Math.floor(baseSize * 0.6);
+          // 🔥 Queremos que ocupe hasta 90% pero sin romper dimensiones
+const maxWatermarkWidth = Math.floor(imageWidth * 0.99);
+const maxWatermarkHeight = Math.floor(imageHeight * 0.99);
 
-          const watermarkBuffer = await sharp(watermarkPath)
-            .resize({ width: watermarkWidth })
-            .ensureAlpha()
-            .modulate({ opacity: 0.25 })
-            .png()
-            .toBuffer();
+const watermarkBuffer = await sharp(watermarkPath)
+  .resize({
+    width: maxWatermarkWidth,
+    height: maxWatermarkHeight,
+    fit: "inside", // 👈 NUNCA excede dimensiones
+  })
+  .ensureAlpha()
+  .modulate({ opacity: 0.45 })
+  .png()
+  .toBuffer();
 
           const watermarkMeta = await sharp(
             watermarkBuffer
