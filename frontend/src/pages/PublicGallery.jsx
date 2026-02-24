@@ -207,9 +207,15 @@ export default function PublicGallery() {
               src={`${API_URL}${activePhoto.imageUrl}`}
               alt="Preview"
               onLoad={(e) => {
-                const { naturalWidth, naturalHeight } = e.target;
-                setIsVertical(naturalHeight > naturalWidth);
-              }}
+  const img = e.target;
+
+  const width = img.naturalWidth;
+  const height = img.naturalHeight;
+
+  if (!width || !height) return;
+
+  setIsVertical(height >= width);
+}}
               style={{
                 maxWidth: isVertical ? "auto" : "98vw",
                 maxHeight: isVertical ? "95vh" : "auto",

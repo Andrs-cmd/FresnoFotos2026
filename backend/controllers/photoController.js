@@ -137,6 +137,7 @@ const createPhoto = async (req, res) => {
 
       try {
         const baseBuffer = await sharp(originalFinalPath)
+          .rotate() // 👈 ESTO LEE Y APLICA LA ORIENTACIÓN EXIF
           .resize({ width: 800 })
           .jpeg({ quality: 25, chromaSubsampling: "4:2:0" })
           .toBuffer();
