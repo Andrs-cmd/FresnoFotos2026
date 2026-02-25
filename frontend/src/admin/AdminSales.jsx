@@ -11,48 +11,70 @@ const AdminSales = () => {
      OBTENER VENTAS (ADMIN)
   =============================== */
   useEffect(() => {
-    const fetchSales = async () => {
-      try {
-        const res = await api.get("/admin/sales");
-        setSales(Array.isArray(res.data) ? res.data : []);
-      } catch (err) {
-        console.error("❌ Error cargando ventas:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchSales = async () => {
+    try {
+      const res = await api.get("/sales"); // ✅ CORRECTO
+      const data = Array.isArray(res.data) ? res.data : [];
+      setSales(data);
+    } catch (err) {
+      console.error("❌ Error cargando ventas:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchSales();
-  }, []);
+  fetchSales();
+}, []);
+
+  /* DEBUG */
+  useEffect(() => {
+    console.log("SALES RAW:", sales);
+  }, [sales]);
 
   /* ===============================
-     AGRUPAR POR FOTÓGRAFO
+     AGRUPAR POR FOTÓGRAFO (SEGURO)
   =============================== */
   const salesByPhotographer = useMemo(() => {
     const grouped = {};
 
     sales.forEach((sale) => {
-      const photographer = sale.photographer;
-      if (!photographer) return;
+      if (!sale) return;
 
-      if (!grouped[photographer._id]) {
-        grouped[photographer._id] = {
-          photographer,
+      const photographerData = sale.photographer;
+
+      // Si viene como string (sin populate)
+      if (!photographerData) return;
+
+      const photographerId =
+        typeof photographerData === "string"
+          ? photographerData
+          : photographerData._id;
+
+      if (!photographerId) return;
+
+      if (!grouped[photographerId]) {
+        grouped[photographerId] = {
+          photographer:
+            typeof photographerData === "string"
+              ? { _id: photographerId, name: "Fotógrafo", email: "" }
+              : photographerData,
           totalRevenue: 0,
           photos: []
         };
       }
 
-      grouped[photographer._id].totalRevenue += sale.totalPrice || 0;
+      grouped[photographerId].totalRevenue += sale.totalPrice || 0;
 
       if (Array.isArray(sale.photos)) {
-        grouped[photographer._id].photos.push(
-          ...sale.photos.map((p) => ({
-            ...p,
+        sale.photos.forEach((photo) => {
+          if (!photo || !photo.imageUrl) return;
+
+          grouped[photographerId].photos.push({
+            ...photo,
             saleId: sale._id,
             saleDate: sale.createdAt
-          }))
-        );
+          });
+        });
       }
     });
 
@@ -69,6 +91,7 @@ const AdminSales = () => {
       if (dateFilter) {
         photos = photos.filter(
           (photo) =>
+            photo.saleDate &&
             new Date(photo.saleDate).toISOString().slice(0, 10) === dateFilter
         );
       }
@@ -106,7 +129,7 @@ const AdminSales = () => {
                 key={item.photographer._id}
                 value={item.photographer._id}
               >
-                {item.photographer.name}
+                {item.photographer.name || "Fotógrafo"}
               </option>
             ))}
           </select>
@@ -126,6 +149,10 @@ const AdminSales = () => {
       </div>
 
       {/* LISTADO */}
+      {filteredSales.length === 0 && (
+        <p style={{ color: "#000" }}>No hay ventas registradas</p>
+      )}
+
       {filteredSales.map((item) => (
         <div
           key={item.photographer._id}
@@ -145,9 +172,11 @@ const AdminSales = () => {
               marginBottom: 15
             }}
           >
-            <h3 style={{ margin: 0 }}>{item.photographer.name}</h3>
+            <h3 style={{ margin: 0 }}>
+              {item.photographer.name || "Fotógrafo"}
+            </h3>
             <span style={{ color: "#000" }}>
-              {item.photographer.email}
+              {item.photographer.email || ""}
             </span>
           </div>
 
@@ -183,33 +212,29 @@ const AdminSales = () => {
                   marginTop: 12
                 }}
               >
-                {item.photos.map((photo, index) => {
-                  if (!photo || !photo.imageUrl) return null;
-
-                  return (
-                    <div
-                      key={index}
+                {item.photos.map((photo, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      borderRadius: 8,
+                      overflow: "hidden",
+                      background: "#111"
+                    }}
+                  >
+                    <img
+                      src={`${import.meta.env.VITE_API_URL.replace(
+                        "/api",
+                        ""
+                      )}${photo.imageUrl}`}
+                      alt={photo.title || "Foto vendida"}
                       style={{
-                        borderRadius: 8,
-                        overflow: "hidden",
-                        background: "#111"
+                        width: "100%",
+                        height: 120,
+                        objectFit: "cover"
                       }}
-                    >
-                      <img
-                        src={`${import.meta.env.VITE_API_URL.replace(
-                          "/api",
-                          ""
-                        )}${photo.imageUrl}`}
-                        alt={photo.title || "Foto vendida"}
-                        style={{
-                          width: "100%",
-                          height: 120,
-                          objectFit: "cover"
-                        }}
-                      />
-                    </div>
-                  );
-                })}
+                    />
+                  </div>
+                ))}
               </div>
             )}
           </div>

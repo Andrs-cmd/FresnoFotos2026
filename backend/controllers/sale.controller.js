@@ -8,9 +8,9 @@ const User = require("../models/User"); // Fotógrafo es un User
 const createSale = async (req, res) => {
   try {
     const {
-      photographerSlug, // enviado desde PublicGallery.jsx
+      photographerSlug,
       photoIds,
-      quantity,
+      quantity = 1,
       promo,
       unitPrice,
       totalPrice,
@@ -47,15 +47,22 @@ const createSale = async (req, res) => {
       });
     }
 
-    // ✅ Crear venta como PENDIENTE y asignar totalPhotos
+    // 🔢 CALCULAR PRECIOS DE FORMA SEGURA
+    const finalUnitPrice = unitPrice || 1000; // precio base por defecto
+    const finalQuantity = quantity || validPhotos.length;
+
+    const calculatedTotal =
+      totalPrice || finalUnitPrice * finalQuantity;
+
+    // ✅ Crear venta como PENDIENTE
     const sale = await Sale.create({
       photographer: photographer._id,
-      photos: validPhotos.map((p) => p._id), // solo ObjectId
-      quantity,
+      photos: validPhotos.map((p) => p._id),
+      quantity: finalQuantity,
       totalPhotos: validPhotos.length,
-      promoLabel: promo,
-      unitPrice,
-      totalPrice,
+      promoLabel: promo || null,
+      unitPrice: finalUnitPrice,
+      totalPrice: calculatedTotal,
       status: "pending",
       source: source || "web"
     });
@@ -79,8 +86,8 @@ const createSale = async (req, res) => {
 const getAllSales = async (req, res) => {
   try {
     const sales = await Sale.find()
-      .populate("photographer", "name email slug") // info del fotógrafo
-      .populate("photos", "_id imageUrl thumbUrl title") // ✅ populate directo
+      .populate("photographer", "name email slug")
+      .populate("photos", "_id imageUrl thumbUrl title")
       .sort({ createdAt: -1 });
 
     res.json(sales);
