@@ -8,23 +8,30 @@ const AdminSales = () => {
   const [loading, setLoading] = useState(true);
 
   /* ===============================
+     BASE URL SEGURA (PRODUCCIÓN SAFE)
+  =============================== */
+  const baseUrl = import.meta.env.VITE_API_URL
+    ? import.meta.env.VITE_API_URL.replace("/api", "")
+    : "";
+
+  /* ===============================
      OBTENER VENTAS (ADMIN)
   =============================== */
   useEffect(() => {
-  const fetchSales = async () => {
-    try {
-      const res = await api.get("/sales"); // ✅ CORRECTO
-      const data = Array.isArray(res.data) ? res.data : [];
-      setSales(data);
-    } catch (err) {
-      console.error("❌ Error cargando ventas:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const fetchSales = async () => {
+      try {
+        const res = await api.get("/sales");
+        const data = Array.isArray(res.data) ? res.data : [];
+        setSales(data);
+      } catch (err) {
+        console.error("❌ Error cargando ventas:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchSales();
-}, []);
+    fetchSales();
+  }, []);
 
   /* DEBUG */
   useEffect(() => {
@@ -41,8 +48,6 @@ const AdminSales = () => {
       if (!sale) return;
 
       const photographerData = sale.photographer;
-
-      // Si viene como string (sin populate)
       if (!photographerData) return;
 
       const photographerId =
@@ -222,10 +227,11 @@ const AdminSales = () => {
                     }}
                   >
                     <img
-                      src={`${import.meta.env.VITE_API_URL.replace(
-                        "/api",
-                        ""
-                      )}${photo.imageUrl}`}
+                      src={
+                        photo.imageUrl
+                          ? `${baseUrl}${photo.imageUrl}`
+                          : ""
+                      }
                       alt={photo.title || "Foto vendida"}
                       style={{
                         width: "100%",
