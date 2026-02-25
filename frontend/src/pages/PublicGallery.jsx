@@ -140,7 +140,7 @@ export default function PublicGallery() {
       const message = `Hola! 👋 Quiero comprar fotos de *${slug.toUpperCase()}*:\n\n${photoLinks}`;
 
       window.open(
-        `https://wa.me/573195768097?text=${encodeURIComponent(message)}`,
+        `https://wa.me/5492215683733?text=${encodeURIComponent(message)}`,
         "_blank"
       );
 
