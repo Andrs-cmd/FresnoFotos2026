@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import api from "../api/axios";
 
 const API_URL =
   import.meta.env.MODE === "development"
     ? ""
-    : import.meta.env.VITE_API_URL;
+    : import.meta.env.VITE_API_URL || "";
 
 const calculatePrice = (qty) => {
   return {
@@ -28,6 +28,9 @@ export default function PublicGallery() {
   const formatDate = (date) =>
     new Date(date).toISOString().slice(0, 10);
 
+  /* ===============================
+     OBTENER FOTOS
+  =============================== */
   useEffect(() => {
     const fetchPhotos = async () => {
       try {
@@ -44,6 +47,21 @@ export default function PublicGallery() {
     fetchPhotos();
   }, [slug]);
 
+  /* ===============================
+     OBTENER FECHAS ÚNICAS
+  =============================== */
+  const availableDates = useMemo(() => {
+    const unique = new Set(
+      photos
+        .filter((p) => p.sessionDate)
+        .map((p) => formatDate(p.sessionDate))
+    );
+    return Array.from(unique).sort();
+  }, [photos]);
+
+  /* ===============================
+     FILTRAR POR FECHA
+  =============================== */
   useEffect(() => {
     if (!selectedDate) {
       setFilteredPhotos(photos);
@@ -53,6 +71,7 @@ export default function PublicGallery() {
     setFilteredPhotos(
       photos.filter(
         (photo) =>
+          photo.sessionDate &&
           formatDate(photo.sessionDate) === selectedDate
       )
     );
@@ -118,8 +137,6 @@ export default function PublicGallery() {
     if (selectedPhotos.length === 0) return;
 
     try {
-      const pricing = calculatePrice(selectedPhotos.length);
-
       await api.post("/sales", {
         photographerSlug: slug,
         photoIds: selectedPhotos,
@@ -172,6 +189,50 @@ export default function PublicGallery() {
       }}
     >
       <h1>{slug.toUpperCase()}</h1>
+
+      {/* SELECTOR DE FECHA */}
+      {availableDates.length > 0 && (
+  <div style={{ marginBottom: 30 }}>
+    <label
+      style={{
+        fontWeight: 600,
+        marginRight: 12,
+      }}
+    >
+      Filtrar por fecha:
+    </label>
+
+    <input
+      type="date"
+      value={selectedDate}
+      onChange={(e) => setSelectedDate(e.target.value)}
+      min={availableDates[0]}
+      max={availableDates[availableDates.length - 1]}
+      style={{
+        padding: 8,
+        borderRadius: 8,
+        border: "1px solid #ccc",
+        fontSize: 14,
+      }}
+    />
+
+    {selectedDate && (
+      <button
+        onClick={() => setSelectedDate("")}
+        style={{
+          marginLeft: 10,
+          padding: "6px 10px",
+          borderRadius: 8,
+          border: "none",
+          background: "#ddd",
+          cursor: "pointer",
+        }}
+      >
+        Limpiar
+      </button>
+    )}
+  </div>
+)}
 
       {/* GRID */}
       <div
@@ -235,7 +296,30 @@ export default function PublicGallery() {
         })}
       </div>
 
-      {/* BOTON */}
+      {/* PANEL FIJO DE SELECCIÓN */}
+      {qty > 0 && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 20,
+            left: 20,
+            background: "#1336e7",
+            padding: "14px 20px",
+            borderRadius: 16,
+            boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
+            zIndex: 1000,
+          }}
+        >
+          <div style={{ fontWeight: 700, color: "#fff" }}>
+            {qty} fotos seleccionadas
+          </div>
+          <div style={{ marginTop: 6, color: "#fff" }}>
+            Total: ${pricing.total.toLocaleString("es-AR")}
+          </div>
+        </div>
+      )}
+
+      {/* BOTON WHATSAPP */}
       {qty > 0 && (
         <button
           onClick={sendToWhatsapp}
@@ -252,134 +336,132 @@ export default function PublicGallery() {
             zIndex: 1000,
           }}
         >
-          Comprar {qty} · ${pricing.total.toLocaleString("es-AR")}
+          Comprar
         </button>
       )}
 
-      {/* MODAL */}
-      {activePhoto && (
-        <div
-          onClick={() => setActivePhoto(null)}
-          onTouchStart={onTouchStart}
-          onTouchEnd={onTouchEnd}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.92)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 9999,
-          }}
-        >
-          <div
-            style={{
-              position: "relative",
-              display: "inline-block",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img
-              src={`${API_URL}${activePhoto.imageUrl}`}
-              alt="Foto ampliada"
-              style={{
-                maxWidth: "95vw",
-                maxHeight: "85vh",
-                objectFit: "contain",
-                borderRadius: 12,
-              }}
-            />
+      {/* MODAL (NO TOCADO) */}
+      {/* MODAL COMPLETO */}
+{activePhoto && (
+  <div
+    onClick={() => setActivePhoto(null)}
+    onTouchStart={onTouchStart}
+    onTouchEnd={onTouchEnd}
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(0,0,0,0.92)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 9999,
+    }}
+  >
+    <div
+      style={{ position: "relative" }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <img
+        src={`${API_URL}${activePhoto.imageUrl}`}
+        alt="Foto ampliada"
+        style={{
+          maxWidth: "95vw",
+          maxHeight: "85vh",
+          objectFit: "contain",
+          borderRadius: 12,
+        }}
+      />
 
-            {/* CÍRCULO DE SELECCIÓN DENTRO DE LA IMAGEN */}
-            <div
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleSelect(activePhoto._id);
-              }}
-              style={{
-                position: "absolute",
-                top: 14,
-                right: 14,
-                width: 30,
-                height: 30,
-                borderRadius: "50%",
-                background: selectedPhotos.includes(activePhoto._id)
-                  ? "#00ff88"
-                  : "rgba(0,0,0,0.6)",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                color: "#000",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              {selectedPhotos.includes(activePhoto._id) && "✓"}
-            </div>
-          </div>
+      {/* CÍRCULO DE SELECCIÓN */}
+      <div
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleSelect(activePhoto._id);
+        }}
+        style={{
+          position: "absolute",
+          top: 14,
+          right: 14,
+          width: 34,
+          height: 34,
+          borderRadius: "50%",
+          background: selectedPhotos.includes(activePhoto._id)
+            ? "#00ff88"
+            : "rgba(0,0,0,0.6)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          fontWeight: "bold",
+          cursor: "pointer",
+        }}
+      >
+        {selectedPhotos.includes(activePhoto._id) && "✓"}
+      </div>
+    </div>
 
-          {/* Cerrar */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setActivePhoto(null);
-            }}
-            style={{
-              position: "absolute",
-              top: 20,
-              right: 25,
-              fontSize: 28,
-              background: "none",
-              color: "#fff",
-              border: "none",
-              cursor: "pointer",
-            }}
-          >
-            ✕
-          </button>
+    {/* BOTÓN CERRAR */}
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        setActivePhoto(null);
+      }}
+      style={{
+        position: "absolute",
+        top: 20,
+        right: 25,
+        fontSize: 30,
+        background: "none",
+        color: "#fff",
+        border: "none",
+        cursor: "pointer",
+      }}
+    >
+      ✕
+    </button>
 
-          {/* Flechas */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              navigatePhoto(-1);
-            }}
-            style={{
-              position: "absolute",
-              left: 20,
-              top: "50%",
-              transform: "translateY(-50%)",
-              fontSize: 40,
-              background: "none",
-              color: "#fff",
-              border: "none",
-              cursor: "pointer",
-            }}
-          >
-            ‹
-          </button>
+    {/* FLECHA IZQUIERDA */}
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        navigatePhoto(-1);
+      }}
+      style={{
+        position: "absolute",
+        left: 20,
+        top: "50%",
+        transform: "translateY(-50%)",
+        fontSize: 50,
+        background: "none",
+        color: "#fff",
+        border: "none",
+        cursor: "pointer",
+      }}
+    >
+      ‹
+    </button>
 
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              navigatePhoto(1);
-            }}
-            style={{
-              position: "absolute",
-              right: 20,
-              top: "50%",
-              transform: "translateY(-50%)",
-              fontSize: 40,
-              background: "none",
-              color: "#fff",
-              border: "none",
-              cursor: "pointer",
-            }}
-          >
-            ›
-          </button>
-        </div>
-      )}
+    {/* FLECHA DERECHA */}
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        navigatePhoto(1);
+      }}
+      style={{
+        position: "absolute",
+        right: 20,
+        top: "50%",
+        transform: "translateY(-50%)",
+        fontSize: 50,
+        background: "none",
+        color: "#fff",
+        border: "none",
+        cursor: "pointer",
+      }}
+    >
+      ›
+    </button>
+  </div>
+)}
     </div>
   );
 }
